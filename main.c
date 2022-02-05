@@ -41,14 +41,20 @@ typedef struct snake_ {
 } snake;
 snake snakes[2];
 
+void send_command(uint8_t command) {
+    if (multiplayer) {
+        _io_out = command;
+        send_byte();
+    }
+}
+
 void update_score(void) {
     if (multiplayer){
         gotoxy(7,0);
         printf("S2 %d", snakes[1].score);
         gotoxy(0,0);
         printf("S1 %d", snakes[0].score);
-        _io_out = snakes[player].score + UNKNOWN;
-        send_byte();
+        send_command(snakes[player].score + UNKNOWN);
     } else {
         gotoxy(0,0);
         printf("Score %d", snakes[player].score);
@@ -261,8 +267,7 @@ void show_title(void) {
     }
     waitpadup();
     if (player == 0){
-        _io_out = START;
-        send_byte();
+        send_command(START);
     }
 }
 
@@ -375,8 +380,8 @@ void main(void)
     }
     // Try to send our random seed to the other player
     i = DIV_REG;
-    _io_out = i;
     initarand(i);
+    _io_out = i;
     send_byte();
     while((_io_status == IO_SENDING) && (joypad() == 0));
     if(_io_status == IO_IDLE)
@@ -405,34 +410,29 @@ void main(void)
         }
         if ((multiplayer && player == 1 || !multiplayer) && i == J_START) {
             enable_move = 1;
-            _io_out = START;
-            send_byte();
+            send_command(START);
         } else if (i == J_SELECT && enable_move == 0) {
             add_apple();
             waitpadup();
         } else if (i == J_LEFT && enable_move == 1){
             if (snakes[player].dir != RIGHT) {
                snakes[player].dir = LEFT;
-                _io_out = LEFT;
-                send_byte();
+                send_command(LEFT);
             }
         } else if (i == J_RIGHT && enable_move == 1){
             if (snakes[player].dir != LEFT) {
                 snakes[player].dir = RIGHT;
-                _io_out = RIGHT;
-                send_byte();
+                send_command(RIGHT);
             }
         } else if (i == J_DOWN && enable_move == 1){
             if (snakes[player].dir != UP) {
                 snakes[player].dir = DOWN;
-                _io_out = DOWN;
-                send_byte();
+                send_command(DOWN);
             }
         } else if (i == J_UP && enable_move == 1){
             if (snakes[player].dir != DOWN) {
                 snakes[player].dir = UP;
-                _io_out = UP;
-                send_byte();
+                send_command(UP);
             }
         }
         if (enable_move) {
@@ -448,8 +448,7 @@ void main(void)
                         wait_vbl_done();
                     }
                     waitpadup();
-                    _io_out = START;
-                    send_byte();
+                    send_command(START);
                 } else {
                     while (_io_status == IO_RECEIVING);
                 }
