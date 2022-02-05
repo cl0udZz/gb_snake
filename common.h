@@ -6,6 +6,7 @@
 #define UP      2
 #define DOWN    3
 #define START   4
-#define UNKNOWN 5
+#define SELECT  5
+#define UNKNOWN 6
 
 #endif //COMMON_H
