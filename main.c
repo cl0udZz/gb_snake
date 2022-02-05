@@ -8,11 +8,8 @@
 #include "res/map.h"
 #include "res/title.h"
 #include "PrintCmd.h"
+#include "common.h"
 
-#define RIGHT 0
-#define LEFT  1
-#define UP    2
-#define DOWN  3
 #define UPDATE_SNAKE 8
 #define OFFSET 128
 #define APPLE 144
@@ -276,6 +273,12 @@ const uint16_t tile_map_palettes[] =
   tile_mapCGBPal2c0,tile_mapCGBPal2c1,tile_mapCGBPal2c2,tile_mapCGBPal2c3,
 };
 
+void process_link() {
+    if (_io_in == START) {
+        enable_move = 1;
+    }
+}
+
 void main(void)
 {
     uint8_t i;
@@ -290,14 +293,24 @@ void main(void)
     CRITICAL {
         STAT_REG |= STATF_LYC; LYC_REG = 0;
         add_LCD(scanline_isr);
-        set_interrupts(VBL_IFLAG | LCD_IFLAG);
+        add_SIO(nowait_int_handler);
+        set_interrupts(VBL_IFLAG | LCD_IFLAG | SIO_IFLAG);
     }
-
+    receive_byte();
     while(1) {
         i = joypad();
-
+        if (_io_status == IO_IDLE) {
+            // we have received something
+            process_link();
+            receive_byte();
+        }
+        if (_io_status == IO_ERROR) {
+            receive_byte();
+        }
         if (i == J_START) {
             enable_move = 1;
+            _io_out = START;
+            send_byte();
             waitpadup();
         } else if (i == J_SELECT && enable_move == 0) {
             if (num_apples >= 10)
@@ -312,20 +325,32 @@ void main(void)
             waitpadup();
         } else if (i == J_LEFT || i == J_B){
             enable_move = 1;
-            if (dir != RIGHT)
+            if (dir != RIGHT) {
                 dir = LEFT;
+                _io_out = LEFT;
+                send_byte();
+            }
         } else if (i == J_RIGHT || i == J_A){
             enable_move = 1;
-            if (dir != LEFT)
+            if (dir != LEFT) {
                 dir = RIGHT;
+                _io_out = RIGHT;
+                send_byte();
+            }
         } else if (i == J_DOWN){
             enable_move = 1;
-            if (dir != UP)
+            if (dir != UP) {
                 dir = DOWN;
+                _io_out = DOWN;
+                send_byte();
+            }
         } else if (i == J_UP){
             enable_move = 1;
-            if (dir != DOWN)
+            if (dir != DOWN) {
                 dir = UP;
+                _io_out = UP;
+                send_byte();
+            }
         }
         if (enable_move) {
             update++;
