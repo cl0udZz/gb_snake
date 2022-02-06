@@ -245,6 +245,7 @@ void show_title(void) {
                 PrinterInit();
                 PrintScreen(TRUE);
             }
+            receive_byte();
         }
         if ((multiplayer == FALSE || (multiplayer == TRUE && player == 0)) && J_START == joypad()) {
             break;
